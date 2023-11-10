@@ -19,7 +19,7 @@ export class SocketGuard implements CanActivate {
         try {
           const token = socket.handshake.auth.token.replace('Bearer ',"")
           const result = await jwtService.verify(token)
-          return !!result;
+          return result;
         } catch (error) {
           throw new UnauthorizedException("JsonWebTokenError: invalid token");
           

@@ -9,13 +9,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { rooms } from './rooms';
-import { UnauthorizedException, UseGuards } from '@nestjs/common';
+import { demo_players, liveRooms, rooms } from './rooms';
 import { SocketGuard } from 'src/auth/jwt/jwt.socketGuard';
 import { JwtService } from '@nestjs/jwt';
 
-@WebSocketGateway({ namespace: /\/room-.+/ })
-// @UseGuards(SocketGuard)
+@WebSocketGateway({ namespace: /\/room-+/ })
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -24,64 +22,69 @@ export class EventsGateway
   @WebSocketServer() public server: Server;
 
   @SubscribeMessage('test')
-  handleTest(@MessageBody() data: string,@ConnectedSocket() socket: Socket) {
+  handleTest(@MessageBody() data: string, @ConnectedSocket() socket: Socket) {
     console.log('test', data);
   }
-  
-  @SubscribeMessage('EnterRoom')
-    handleEnterRoom(
-    // @MessageBody() data: { id: number; channels: number[] },
+
+  afterInit(server: Server) {
+    console.log('init');
+  }
+
+  async handleConnection(@ConnectedSocket() socket: Socket) {
+    try {
+      console.log('handle connected');
+      const auth = await SocketGuard.verifyToken(this.jwtService, socket);
+      console.log('auth', auth);
+
+      const roomId = socket.nsp.name.substring(1);
+      socket.join(roomId)
+      console.log("[handleConnection] join roomId : "+roomId);
+    } catch (error) {
+      if (error.response.error === 'Unauthorized') {
+        socket.emit('disconnected', 'JsonWebTokenError: invalid token');
+        socket.disconnect();
+      }
+      console.log(error);
+    }
+  }
+
+  handleDisconnect(@ConnectedSocket() socket: Socket) {
+    console.log('disconnected', socket.nsp.name);
+    const roomId = socket.nsp.name.substring(1);
+    socket.leave(roomId);
+    console.log("[disconnected] leave roomId : "+roomId);
+  }
+
+  @SubscribeMessage('GetRoomInfo')
+  handleGetRoomInfo(
     @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { roomId: string },
   ) {
-    const newNamespace = socket.nsp;
-    console.log(socket.nsp.name);
-
-
-    // rooms[socket.nsp.name][socket.id] = data.id;
-    // this.server..send('hello')
-    newNamespace.emit('onlineList', "is?");
-    // newNamespace.emit('onlineList', Object.values(rooms[socket.nsp.name])); 
-    socket.join(socket.nsp.name)
+    const { roomId } = data;
+    socket.emit("RoomInfo-"+roomId, rooms[roomId]);
+    socket.emit("TablePlayers-"+roomId, liveRooms[roomId]);
+    // newNamespace.emit('onlineList', Object.values(rooms[socket.nsp.name]));
+    // socket.join(socket.nsp.name)
     // data.channels.forEach((channel) => {
     //   console.log('join', socket.nsp.name, channel);
     //   socket.join(`${socket.nsp.name}-${channel}`);
     // });
   }
 
-  afterInit(server: Server) {
-    console.log('init');
-    rooms['/room-123'] = [{ id: '원혁' }, { id: '진기' }, { id: '태우' }];
-  }
-
-
-  async handleConnection(@ConnectedSocket() socket: Socket) {
-    try {
-      console.log('handle connected', socket.nsp.name);
-      const auth = await SocketGuard.verifyToken(
-        this.jwtService,
-        socket,
-      );
-      console.log("auth",auth);
-      
-      // if (!rooms[socket.nsp.name]) {
-      //   rooms[socket.nsp.name] = {};
-      // }
-  
-      socket.emit('hello', socket.nsp.name);
-    } catch (error) {
-      if(error.response.error === 'Unauthorized') {
-        socket.emit('disconnected',"JsonWebTokenError: invalid token")
-        socket.disconnect()
-      }
-      // console.log(error);
-      
+  @SubscribeMessage('GetRoomTableInfo')
+  handleGetRoomLiveInfo(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    const { roomId } = data;
+    const {gameState ,latestTimer,blindLevel,blindTime,blind} = rooms[roomId]
+    const TableInfo = {
+      gameState,
+      blindLevel,
+      currentBlind : blind[blindLevel],
+      nextBlind : blind[blindLevel+1],
     }
-  }
-
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log('disconnected', socket.nsp.name);
-    // const newNamespace = socket.nsp;
-    // delete rooms[socket.nsp.name][socket.id];
-    // newNamespace.emit('onlioneList', Object.values(rooms[socket.nsp.name]));
+    
+    socket.emit("TableInfo-"+roomId, TableInfo);
   }
 }

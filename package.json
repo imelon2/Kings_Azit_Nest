@@ -27,12 +27,16 @@
     "@nestjs/passport": "^10.0.2",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.2.5",
+    "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "^10.2.5",
+    "mysql2": "^3.6.2",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "typeorm": "^0.3.17",
+    "typeorm-model-generator": "^0.4.6",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
