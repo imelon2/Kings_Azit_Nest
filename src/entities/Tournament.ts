@@ -24,7 +24,7 @@ export class Tournament {
   condition: number | null;
 
   @Column("varchar", { name: "ticket_type", length: 45 })
-  ticketType: string;
+  ticketType: TicketType;
 
   @Column("int", { name: "ticket_amount" })
   ticketAmount: number;

@@ -1,11 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt.guard';
-import { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { Tournament } from 'src/entities/Tournament';
 
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('rooms')
 export class RoomsController {
     constructor(
@@ -20,8 +19,9 @@ export class RoomsController {
     }
 
     @Get('test')
-    test() {
-        return this.roomsService.testEmit('room-8f34d95c-4097-4f90-ae09-81b38e5eeb47')
+    test(@Req() req:any) {
+
+        return this.roomsService.testEmit("")
     }
 
     @Get('getRoomInfo')
@@ -35,8 +35,17 @@ export class RoomsController {
     }
 
     @Post('enterRoom')
-    enterRoom(@Body() data: {roomId:string,user:string}) {
-        return this.roomsService.enterRoom(data.roomId,data.user)
+    enterRoom(@Req() req:any,@Body() data: {roomId:string}) {
+        return this.roomsService.enterRoom(data.roomId,req.user.uuid)
+    }
+
+    @Get('getGameInfoFromToday')
+    getGameInfoFromToday(@Query('limit') limit:number) {
+        try {
+            return this.roomsService.getGameInfoFromToday(limit);
+        } catch (error) {
+            throw new HttpException(error, 405);
+        }
     }
 
     @Post('startGame')

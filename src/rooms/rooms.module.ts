@@ -11,10 +11,11 @@ import { MemberRoles } from 'src/entities/MemberRoles';
 import { Role } from 'src/entities/Role';
 import { UserGameHistory } from 'src/entities/UserGameHistory';
 import { RoomsRepository } from './rooms.repository';
+import { TicketHistory } from 'src/entities/TicketHistory';
 
 
 @Module({
-  imports:[EventsModule,AuthModule,TypeOrmModule.forFeature([Tournament,Member,Ticket,MemberRoles,Role,UserGameHistory])],
+  imports:[EventsModule,AuthModule,TypeOrmModule.forFeature([Tournament,Member,Ticket,TicketHistory,MemberRoles,Role,UserGameHistory])],
   providers: [RoomsService, RoomsRepository],
   controllers: [RoomsController]
 })

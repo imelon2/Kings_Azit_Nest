@@ -9,7 +9,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { demo_players, liveRooms, rooms } from './rooms';
+import { liveRooms, rooms } from './rooms';
 import { SocketGuard } from 'src/auth/jwt/jwt.socketGuard';
 import { JwtService } from '@nestjs/jwt';
 
@@ -33,8 +33,7 @@ export class EventsGateway
   async handleConnection(@ConnectedSocket() socket: Socket) {
     try {
       console.log('handle connected');
-      const auth = await SocketGuard.verifyToken(this.jwtService, socket);
-      console.log('auth', auth);
+      await SocketGuard.verifyToken(this.jwtService, socket);
 
       const roomId = socket.nsp.name.substring(1);
       socket.join(roomId)
